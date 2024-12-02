@@ -1,16 +1,22 @@
-# AS2_1 - Endl, Kofler
 # Zero-pressure gradient (ZPG) boundary layer
 #%%
 # Calculate the velocity and shear stress distribution
 # Import necessary modules
-import matplotlib.pyplot
 import numpy as np
-import matplotlib
 
-matplotlib.rcParams['font.family'] = 'cmu serif'
-matplotlib.rcParams['mathtext.fontset'] = 'cm'
-matplotlib.rcParams['axes.unicode_minus'] = False
-plt = matplotlib.pyplot
+def ascii_loading_bar(j, N, bar_length=50):
+    # Calculate the percentage and number of filled characters
+    percent = (j / N) * 100
+    filled_length = int(bar_length * j // N)  # How much of the bar should be filled
+    bar = '=' * filled_length + '-' * (bar_length - filled_length)  # Build the bar
+    
+    # Print the loading bar with percentage
+    print(f"\r[{bar}] {percent:.2f}%", end='', flush=True)
+
+print(
+    f"Initializing the simulation process...\n"
+    f"Configuring parameters and preparing to solve the system.\n"
+)
 
 # Define parameters
 Re = 10**3  # Reynolds number
@@ -108,8 +114,14 @@ X = np.zeros(3 * M)
 iterate = 1
 it = np.zeros(N + 1)    # vector which saves the iteration count per step
 
+print(
+    f"System setup complete. Starting the iterative solver...\nThis process may take some time.\n"
+)
+
 # Calculate values along x direction
 for j in range(1, N + 1):
+    ascii_loading_bar(j, N)  # Update the loading bar with the current progress  
+
     # Initial iterate - solution from previous line
     Ui[:] = U[:, j - 1]
     Vi[:] = V[:, j - 1]
@@ -197,160 +209,150 @@ for j in range(N + 1):
     Um[j] = np.mean(U[:,j])
     Vm[j] = np.mean(V[:,j])
 
+print(
+    f"\n\nThe solution has successfully converged.\n"
+)
+
+#%%
+# Save the simulation as raw data
+import os
+
+print(
+f"\nPlease wait while the data is being written to the output file.\n"
+)
+
+filename = "../data/simulation-data.csv"
+directory = os.path.dirname(filename)  # Get the directory part of the file path
+
+# Create the directory if it does not exist
+if not os.path.exists(directory):
+    os.makedirs(directory)
+
+# Delete old file if it exists
+if os.path.exists(filename):
+    os.remove(filename)
+
+# Open the file in append mode using built-in `open` instead of `os.open`
+with open(filename, "w") as f:  # Use "w" mode to create a new file
+    # Write the header
+    f.write("x Um Vm d d99 tw\n")
+    
+    # Example loop to generate data
+    for j in range(0, N + 1):
+        f.write(f"{j} {Um[j]:.6f} {Vm[j]:.6f} {d[j]:.6f} {d99[j]:.6f} {T[0,j]:.6f}\n")
+    f.write("#\n")
+    
+    for j in range(0, N + 1):
+        f.write("x " + str(j) + "\n")
+        f.write("y u v tau_xy\n")
+        for i in range(0, M + 1):
+            f.write(f"{i} {U[i,j]:.6f} {V[i,j]:.6f} {T[i,j]:.6f}\n")
+        f.write("#\n")
+
+# Open and read the file
+# with open(filename, "r") as f:
+#     print(f.read())
+f.close()
+
+print(
+    f"The raw simulation data has been saved to the following file:\n"
+    f"    {filename}\n"
+)
 #%%
 # Plot the results
 
-# Generate animation
-# figure0, axis0 = plt.subplots(figsize = (8,3), dpi = 300)
-# for j in range(0,N):
-#     axis0.cla()
-#     axis0.set_xlim([-0.5,10])
-#     axis0.set_ylim([0,1])
+# import matplotlib
 
-#     axis0.plot(U[:,1] + j * dx, y, color="black")
-#     axis0.plot([j*dx, j*dx], [0, H], color="black")
-
-#     axis0.plot(x[:j],d99[:j], ":")
-
-#     lbl = str(j) + "_as2_1.png"
-#     figure0.savefig(lbl, bbox_inches='tight')
-
+# matplotlib.rcParams['font.family'] = 'cmu serif'
+# matplotlib.rcParams['mathtext.fontset'] = 'cm'
+# matplotlib.rcParams['axes.unicode_minus'] = False
+# plt = matplotlib.pyplot
 
 # Plot velocity and shear stress @(k) [k as integer]
-k = 8       # s
+# k = 8       # s
 
-figure1, axis1 = plt.subplots(figsize = (4,3), dpi=300)
+# figure1, axis1 = plt.subplots(figsize = (4,3), dpi=300)
 
-lbl = r"$u(x=0,y)$"
-axis1.plot(U[:,0], y, label=lbl, color="grey", alpha=0.5, linestyle="--", linewidth="1")
+# lbl = r"$u(x=0,y)$"
+# axis1.plot(U[:,0], y, label=lbl, color="grey", alpha=0.5, linestyle="--", linewidth="1")
 
-lbl = r"$u(x=" + str(k) + r",y)$"
-axis1.plot(U[:,k*10], y, label=lbl, color="black")
-axis1.plot([0, 0], [0, H], color="black")
+# lbl = r"$u(x=" + str(k) + r",y)$"
+# axis1.plot(U[:,k*10], y, label=lbl, color="black")
+# axis1.plot([0, 0], [0, H], color="black")
 
-axis1.legend()
-axis1.set_ylim([0, 1])
-axis1.set_xlim([0, 1.1])
+# axis1.legend()
+# axis1.set_ylim([0, 1])
+# axis1.set_xlim([0, 1.1])
 
-axis1.set_ylabel("y")
-axis1.set_xlabel("u(x,y)")
+# axis1.set_ylabel("y")
+# axis1.set_xlabel("u(x,y)")
 
-filename = "zpg_profile_zoom_x_" + str(k) + ".pdf"
+# filename = "zpg_profile_zoom_x_" + str(k) + ".pdf"
 # figure1.savefig(filename, bbox_inches='tight')
 
 
-figure2, axis2 = plt.subplots(figsize = (8,3), dpi=300)
+# figure2, axis2 = plt.subplots(figsize = (8,3), dpi=300)
 
-axis2.plot(U[:,0],y, color="black")
-axis2.plot([0,0], [0, H], color="black")
+# axis2.plot(U[:,0],y, color="black")
+# axis2.plot([0,0], [0, H], color="black")
 
-axis2.plot(U[:,30] + 3, y, color="black")
-axis2.plot([3,3], [0, H], color="black")
+# axis2.plot(U[:,30] + 3, y, color="black")
+# axis2.plot([3,3], [0, H], color="black")
 
-axis2.plot(U[:,60] + 6, y, color="black")
-axis2.plot([6,6], [0, H], color="black")
+# axis2.plot(U[:,60] + 6, y, color="black")
+# axis2.plot([6,6], [0, H], color="black")
 
-axis2.plot(U[:,90] + 9, y, color="black")
-axis2.plot([9,9], [0, H], color="black")
+# axis2.plot(U[:,90] + 9, y, color="black")
+# axis2.plot([9,9], [0, H], color="black")
 
-axis2.plot(x, d99, "--", linewidth=1)
-axis2.text(x[-1] + 0.25, d99[-1] - 0.025, r"$\mathbf{\delta}_{99}(x)$", color="#1f77b4")
+# axis2.plot(x, d99, "--", linewidth=1)
+# axis2.text(x[-1] + 0.25, d99[-1] - 0.025, r"$\mathbf{\delta}_{99}(x)$", color="#1f77b4")
 
-axis2.plot(x, d, "--", linewidth=1, color="#7f7f7f")
-axis2.text(x[-1] + 0.25, d[-1] - 0.025, r"$\mathbf{\delta}(x)$", color="#7f7f7f")
+# axis2.plot(x, d, "--", linewidth=1, color="#7f7f7f")
+# axis2.text(x[-1] + 0.25, d[-1] - 0.025, r"$\mathbf{\delta}(x)$", color="#7f7f7f")
 
-axis2.set_ylim([0,2])
-axis2.set_xlim([-0.5, 11])
-axis2.set_xticks(np.arange(0, 11, 1))
-axis2.set_yticks(np.arange(0, 2.1, 0.5))
+# axis2.set_ylim([0,2])
+# axis2.set_xlim([-0.5, 11])
+# axis2.set_xticks(np.arange(0, 11, 1))
+# axis2.set_yticks(np.arange(0, 2.1, 0.5))
 
-axis2.set_ylabel("y")
-axis2.set_xlabel("x")
-axis2.set_title(r"Evolution of the velocity profile, $u(x,y)$")
+# axis2.set_ylabel("y")
+# axis2.set_xlabel("x")
+# axis2.set_title(r"Evolution of the velocity profile, $u(x,y)$")
 
 # figure2.savefig("zpg_profile.pdf", bbox_inches='tight')
 
 
-figure3, axis3 = plt.subplots(figsize = (4,3), dpi=300)
+# figure3, axis3 = plt.subplots(figsize = (4,3), dpi=300)
 
-lbl = r"$\tau\:(x = 0,y)$"
-axis3.plot(T[:,0], y, label=lbl, color="grey", linestyle="--", linewidth=1)
-lbl = r"$\tau\:(x=" + str(k) + r",y)$"
-axis3.plot(T[:,k * 10], y, label=lbl, color="black")
-axis3.plot([0,0], [0,H], color="black")
+# lbl = r"$\tau\:(x = 0,y)$"
+# axis3.plot(T[:,0], y, label=lbl, color="grey", linestyle="--", linewidth=1)
+# lbl = r"$\tau\:(x=" + str(k) + r",y)$"
+# axis3.plot(T[:,k * 10], y, label=lbl, color="black")
+# axis3.plot([0,0], [0,H], color="black")
 
-axis3.set_ylim([0,1])
-axis3.set_xlim([0,0.0055])
-axis3.set_xlabel(r"$\tau \:(x,y)$")
-axis3.set_ylabel("y")
+# axis3.set_ylim([0,1])
+# axis3.set_xlim([0,0.0055])
+# axis3.set_xlabel(r"$\tau \:(x,y)$")
+# axis3.set_ylabel("y")
 
-axis3.legend(loc="upper right")
+# axis3.legend(loc="upper right")
 
-filename = "zpg_shear_zoom_x_" + str(k) + ".pdf"
+# filename = "zpg_shear_zoom_x_" + str(k) + ".pdf"
 # figure3.savefig(filename, bbox_inches='tight')
 
 
-figure4, axis4 = plt.subplots(figsize = (8,1.5), dpi = 300)
+# figure4, axis4 = plt.subplots(figsize = (8,1.5), dpi = 300)
 
-axis4.plot(x, T[0,:], color="black")
-# axis4.text(x[-1] + 0.25, T[0, -1] - 0.00010, r"$\mathbf{\tau}_{w}(x)$", color="#1f77b4")
+# axis4.plot(x, T[0,:], color="black")
+# # axis4.text(x[-1] + 0.25, T[0, -1] - 0.00010, r"$\mathbf{\tau}_{w}(x)$", color="#1f77b4")
 
-axis4.set_ylim([0.002,0.005])
-axis4.set_xlim([-0,10])
-axis4.set_xticks(np.arange(0,11,1))
+# axis4.set_ylim([0.002,0.005])
+# axis4.set_xlim([-0,10])
+# axis4.set_xticks(np.arange(0,11,1))
 
-axis4.set_ylabel(r"$\tau_{w}$")
-axis4.set_xlabel("x")
-axis4.set_title(r"Friction at the wall, $\tau_{w}(x)$")
+# axis4.set_ylabel(r"$\tau_{w}$")
+# axis4.set_xlabel("x")
+# axis4.set_title(r"Friction at the wall, $\tau_{w}(x)$")
 
 # figure4.savefig("zpg_shear.pdf", bbox_inches='tight')
-
-# plot all in one figure
-figure, axis = plt.subplots(3,1, figsize = (8,9), dpi = 300)
-
-figure.tight_layout(pad = 3)
-
-axis[0].plot(x,d99)
-axis[0].set_title(r"Boundary layer thickness $\delta_{99}(x)$")
-axis[0].set_xlabel("X")
-axis[0].set_ylim([0,1])
-axis[0].set_xlim([0,10])
-
-axis[1].plot(x,d)
-axis[1].set_title(r"Displacement thickness $\delta(x)$")
-axis[1].set_xlabel("X")
-axis[1].set_ylim([0,1])
-axis[1].set_xlim([0,10])
-
-axis[2].plot(x,T[0,:])
-axis[2].set_title(r"Friction at the wall, $\tau_w(x)$")
-axis[2].set_xlabel("X")
-axis[2].set_xlim([0,10])
-
-#%%
-import os
-# delete old file
-if os.path.exists("raw_data.txt"):
-    os.remove("raw_data.txt")
-# generate raw data
-f = open("raw_data.txt", "a")
-
-f.write("x Um Vm d d99 tw\n")
-for j in range(0, N + 1):
-    f.write(str(j) + " " + str(Um[j]) + " " + str(Um[j]) + " " + str(d[j]) + " " + str(d99[j]) + " " + str(T[0,j]) + "\n")
-f.write("#\n#\n")
-
-for j in range(0, N + 1):
-    f.write("x " + str(j) + "\n")
-    f.write("y u v tau_xy\n")
-    for i in range(0, M + 1):
-        f.write(str(i) + " " + str(U[i,j]) + " " + str(V[i,j]) + " " + str(T[i,j]) + "\n")
-    f.write("#\n")
-
-# close the file
-f.close()
-
-# open and read the file after the appending:
-f = open("raw_data.txt", "r")
-print(f.read()) 
-f.close()
