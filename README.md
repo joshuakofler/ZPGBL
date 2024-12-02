@@ -301,4 +301,4 @@ For any issues or questions, please refer to the GitHub repository and check the
 
 ## License
 
-This project is licensed under the [MIT License](https://choosealicense.com/licenses/mit/) - see the LICENSE file for details.
+This software is licensed under the [MIT License](https://choosealicense.com/licenses/mit/) - see the LICENSE file for details. The simulation data (simulation-data.csv) is licensed under the [CC-BY-4.0 License](https://creativecommons.org/licenses/by/4.0/legalcode).
